@@ -7,6 +7,9 @@ interface CubeData {
   scale: [number, number, number]
   color: string
   emissive: string
+  pulseSpeed: number
+  pulseOffset: number
+  isTransparent: boolean
 }
 
 const CubeBuildings: React.FC = () => {
@@ -41,7 +44,10 @@ const CubeBuildings: React.FC = () => {
             position: [x + (Math.random() - 0.5) * 0.1, y, z + (Math.random() - 0.5) * 0.1],
             scale: [width, height, depth],
             color,
-            emissive
+            emissive,
+            pulseSpeed: 0.3 + Math.random() * 0.7,
+            pulseOffset: Math.random() * Math.PI * 2,
+            isTransparent: Math.random() < 0.2
           })
         }
       }
@@ -55,12 +61,20 @@ const CubeBuildings: React.FC = () => {
       groupRef.current.children.forEach((child, i) => {
         const mesh = child as THREE.Mesh
         const material = mesh.material as THREE.MeshStandardMaterial
+        const cubeData = cubes[i]
         
-        const time = state.clock.elapsedTime
-        const pulse = Math.sin(time * 0.5 + i * 0.1) * 0.3 + 0.7
-        
-        if (material.emissive) {
-          material.emissiveIntensity = pulse * 0.3
+        if (cubeData) {
+          const time = state.clock.elapsedTime
+          const pulse = Math.sin(time * cubeData.pulseSpeed + cubeData.pulseOffset) * 0.4 + 0.6
+          const intensePulse = Math.sin(time * cubeData.pulseSpeed * 2 + cubeData.pulseOffset) * 0.2 + 0.8
+          
+          if (material.emissive) {
+            material.emissiveIntensity = pulse * (cubeData.isTransparent ? 0.8 : 0.4)
+          }
+          
+          if (cubeData.isTransparent) {
+            material.opacity = intensePulse * 0.7 + 0.3
+          }
         }
       })
     }
@@ -80,11 +94,11 @@ const CubeBuildings: React.FC = () => {
           <meshStandardMaterial
             color={cube.color}
             emissive={cube.emissive}
-            emissiveIntensity={0.2}
-            metalness={0.1}
-            roughness={0.3}
+            emissiveIntensity={cube.isTransparent ? 0.8 : 0.4}
+            metalness={cube.isTransparent ? 0.9 : 0.2}
+            roughness={cube.isTransparent ? 0.05 : 0.3}
             transparent
-            opacity={0.9}
+            opacity={cube.isTransparent ? 0.6 : 0.9}
           />
         </mesh>
       ))}
